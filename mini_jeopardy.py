@@ -1,4 +1,5 @@
-#Overall description
+#This python file chooses questions for miniature (5 question) Jeopardy.
+#The clues are from the "science" category and are from shows that aired in 1996.
 #Author: Christine Chen
 
 import requests #module for making API requests
@@ -10,16 +11,21 @@ import sys
 NUM_CLUES = 5
 ACCEPTABLE_INPUT = ['1','2','3','4','5','Q']
 
+#possible state values
 USR_ERROR = 'usr_error'
 QUIT = 'quit'
 CLUE_SELECTION = 'clue_selection'
+
 STATE = CLUE_SELECTION #starts at CLUE_SELECTION
 
-#helper methods
+#HELPER METHODS
 
-#description
 #input:
-#returns:
+#parameters: a dictionary with the parameters for the jservice api request
+#see http://www.jservice.io/ for possible parameters
+#
+#returns: api response (list of dictionaries)
+#note that final jeopardy clues are removed as well as clues that have been marked as invalid
 def get_clues(parameters):
 
     api = 'http://www.jservice.io/api/clues'
@@ -39,13 +45,21 @@ def get_clues(parameters):
 
         return cleaned_clues
 
-#description
 #input:
-#returns:
+#cleaned_clues: a list of clue dictionaries where each clue has a value
+#
+#returns: a list of 5 (NUM_CLUES) clue dictionaries that have been sorted into ascending order by value
 def pick_and_sort(cleaned_clues):
+    #TODO: it would be good to check here that there are at least 5 clues and 5 distinct values
+    #in cleaned_clues to ensure that we can satisfy the requirements
     values = []
     clue_objs = []
 
+    #TODO: As the program scales, I want to move to the following selection process
+    #(as random selection could result in widely varying run times):
+    #-organize the clues into "buckets" by value (e.g. {'100':[clue1, clue2], '200':[clue1, clue2], etc.})
+    #-select the required number of values
+    #-pick a clue from each value "bucket" (and then sort?)
     while (len(values)!=NUM_CLUES):
         clue = random.choice(cleaned_clues)
 
@@ -64,9 +78,14 @@ def pick_and_sort(cleaned_clues):
 
     return clue_objs
 
-#description
 #input:
-#returns:
+#usr_input: what the user typed at the terminal prompt
+#sorted_clues: a list of 5 (NUM_CLUES) clue dictionaries that have been sorted into ascending order by value
+#
+#returns: a string message to display to the user
+#Note that this methods keeps track of the state of the game. While this is not
+#currently that useful, it will be very useful when adding more functionality to the game
+#(e.g. when adding in the ability to view answers).
 def check_input(usr_input, sorted_clues):
     global STATE
     if (usr_input in ACCEPTABLE_INPUT):
@@ -75,7 +94,7 @@ def check_input(usr_input, sorted_clues):
             return 'Thanks for playing!'
         else:
             STATE = CLUE_SELECTION
-            #list index starts at 0
+            #list index starts at 0, so we need to translate the user input
             clue_idx = int(usr_input)-1
             return 'Here is the question: '+sorted_clues[clue_idx]['question']
     else:
@@ -92,7 +111,7 @@ def main():
     print(greeting)
     print(instructions)
 
-    #get "science" clues that aired in 1996
+    #get "science" clues (25) that aired in 1996
     min_date = datetime.strptime('01/01/1996,00:00:00,UTC', '%m/%d/%Y,%H:%M:%S,%Z')
     max_date = datetime.strptime('12/31/1996,23:59:59,UTC', '%m/%d/%Y,%H:%M:%S,%Z')
 
@@ -109,14 +128,13 @@ def main():
 
     #pick five clues and sort them in ascending value
     sorted_clues = pick_and_sort(clues)
-    
-    #print
-    ctr = 1
 
+    #print the game board
     #want a game board that looks like:
     #1: val
     #2: val
     #...
+    ctr = 1
     for clue in sorted_clues:
         print(str(ctr)+': '+str(clue['value']))
         ctr = ctr + 1
@@ -128,12 +146,9 @@ def main():
 
         #get user input
         usr_input = input("Select a clue ([1-5] and hit Enter): ")
-        #to do: wouldn't want to pass sorted_clues as mini jeopardy scales
+        #TODO: wouldn't want to pass sorted_clues as mini jeopardy scales
         check_msg = check_input(usr_input, sorted_clues)
-        #print(usr_input, check_msg)
-
         print(check_msg)
-        #print(STATE)
 
         if (STATE==QUIT):
             go = False
