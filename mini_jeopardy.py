@@ -6,11 +6,14 @@ from datetime import datetime #module for creating the date parameters for the A
 import random
 import sys
 
+#global variables
 NUM_CLUES = 5
 ACCEPTABLE_INPUT = ['1','2','3','4','5','Q']
+
 USR_ERROR = 'usr_error'
 QUIT = 'quit'
 CLUE_SELECTION = 'clue_selection'
+STATE = CLUE_SELECTION #starts at CLUE_SELECTION
 
 #helper methods
 
@@ -64,14 +67,20 @@ def pick_and_sort(cleaned_clues):
 #description
 #input:
 #returns:
-def check_input(value):
-    if (value in ACCEPTABLE_INPUT):
-        if (value=='Q'):
-            return QUIT
+def check_input(usr_input, sorted_clues):
+    global STATE
+    if (usr_input in ACCEPTABLE_INPUT):
+        if (usr_input=='Q'):
+            STATE = QUIT
+            return 'Thanks for playing!'
         else:
-            return CLUE_SELECTION
+            STATE = CLUE_SELECTION
+            #list index starts at 0
+            clue_idx = int(usr_input)-1
+            return 'Here is the question: '+sorted_clues[clue_idx]['question']
     else:
-        return USR_ERROR
+        STATE = USR_ERROR
+        return 'Input error. Try again.'
 
 #main
 def main():
@@ -79,7 +88,7 @@ def main():
     greeting = 'Welcome to Mini Jeopardy - Science!\n'
     instructions = ('Here are instructions on how to play:\n'
                     '1. Type the row number corresponding to the point value you want (e.g. 1-5).\n'
-                    '2. shift-Q and Enter to exit at any time.\n')
+                    '2. shift-Q and Enter to exit.\n')
     print(greeting)
     print(instructions)
 
@@ -100,7 +109,7 @@ def main():
 
     #pick five clues and sort them in ascending value
     sorted_clues = pick_and_sort(clues)
-
+    
     #print
     ctr = 1
 
@@ -115,25 +124,19 @@ def main():
 
     #time for user interaction
     go = True
-
     while (go):
 
         #get user input
         usr_input = input("Select a clue ([1-5] and hit Enter): ")
-        check_msg = check_input(usr_input)
+        #to do: wouldn't want to pass sorted_clues as mini jeopardy scales
+        check_msg = check_input(usr_input, sorted_clues)
         #print(usr_input, check_msg)
 
-        if (check_msg==USR_ERROR):
-            print('Try again.')
-            continue
-        elif (check_msg==CLUE_SELECTION):
-            #list index starts at 0
-            clue_idx = int(usr_input)-1
-            print('Here is the question:',sorted_clues[clue_idx]['question'])
-            print('\n')
-        else:
-            #the user wants to quit
-            print('Thanks for playing!')
+        print(check_msg)
+        #print(STATE)
+
+        if (STATE==QUIT):
+            go = False
             sys.exit()
 
 
